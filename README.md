@@ -1,5 +1,3 @@
-TODO: Review this README and add or modify as necessary.
-
 ## Google Cloud DNS provider for octoDNS
 
 An [octoDNS](https://github.com/octodns/octodns/) provider that targets [Google Cloud DNS](https://cloud.google.com/dns).
@@ -38,21 +36,29 @@ octodns_googlecloud==0.0.1
 providers:
   googlecloud:
     class: octodns_googlecloud.GoogleCloudProvider
-    # TODO
+    # Credentials file for a service_account or other account can be
+    # specified with the GOOGLE_APPLICATION_CREDENTIALS environment
+    # variable. (https://console.cloud.google.com/apis/credentials)
+    #
+    # The project to work on (not required)
+    # project: foobar
+    #
+    # The File with the google credentials (not required). If used, the
+    # "project" parameter needs to be set, else it will fall back to the
+    #  "default credentials"
+    # credentials_file: ~/google_cloud_credentials_file.json
 ```
 
 ### Support Information
 
 #### Records
 
-TODO: All octoDNS record types are supported.
+GoogleCloudProvider supports A, AAAA, CAA, CNAME, MX, NAPTR, NS, PTR, SPF, SRV, and TXT
 
 #### Dynamic
 
-TODO: GoogleCloudProvider does not support dynamic records.
+GoogleCloudProvider does not support dynamic records.
 
 ### Developement
 
 See the [/script/](/script/) directory for some tools to help with the development process. They generally follow the [Script to rule them all](https://github.com/github/scripts-to-rule-them-all) pattern. Most useful is `./script/bootstrap` which will create a venv and install both the runtime and development related requirements. It will also hook up a pre-commit hook that covers most of what's run by CI.
-
-TODO: any provider specific setup, a docker compose to run things locally etc?

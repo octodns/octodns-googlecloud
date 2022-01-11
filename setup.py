@@ -28,14 +28,14 @@ setup(
     packages=find_packages(),
     python_requires='>=3.6',
     install_requires=(
+        'google-cloud-core>=1.4.1',
+        'google-cloud-dns>=0.32.0',
         'octodns>=0.9.14',
-        # TODO: other requirements
     ),
     url='https://github.com/octodns/octodns-googlecloud',
     version=version(),
     tests_require=(
         'nose',
         'nose-no-network',
-        # TODO: other test-time requirements
     ),
 )
