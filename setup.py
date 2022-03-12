@@ -37,6 +37,13 @@ setup(
         ),
     },
     install_requires=(
+        # There's a pre-release 1.55.1b1 that causes an exception during some
+        # error handling. Doesn't appear to be directly related to octoDNS atm,
+        # but not sure. For now preventing things from using the newer
+        # versions. Once
+        # libshttps://github.com/googleapis/api-common-protos/issues/108 has
+        # been resolved we can remove this line
+        'googleapis-common-protos<=1.55.0',
         'google-cloud-core>=1.4.1',
         'google-cloud-dns>=0.32.0',
         'octodns>=0.9.14',
