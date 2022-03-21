@@ -69,20 +69,25 @@ class GoogleCloudProvider(BaseProvider):
 
             if class_name == 'Create':
                 gcloud_changes.add_record_set(
-                    _rrset_func(gcloud_zone, change.record))
+                _rrset_func(gcloud_zone, change.record))
             elif class_name == 'Delete':
                 gcloud_changes.delete_record_set(
-                    _rrset_func(gcloud_zone, change.record))
+                _rrset_func(gcloud_zone, change.record))
             elif class_name == 'Update':
                 gcloud_changes.delete_record_set(
-                    _rrset_func(gcloud_zone, change.existing))
+                _rrset_func(gcloud_zone, change.existing))
                 gcloud_changes.add_record_set(
-                    _rrset_func(gcloud_zone, change.new))
+                _rrset_func(gcloud_zone, change.new))
             else:
                 msg = f'Change type "{class_name}" for change ' \
-                    f'"{str(change)}" is none of "Create", "Delete" or "Update'
+                    f'"{str(changes)}" is none of "Create", "Delete" or "Update'
                 raise RuntimeError(msg)
 
+            if len(gcloud_changes.additions) == 1000 or len(gcloud_changes.deletions) == 1000:
+                self._really_apply(self, gcloud_changes)
+                gcloud_changes.reload()
+
+    def _really_apply(self, gcloud_changes):
         gcloud_changes.create()
 
         for i in range(120):
@@ -94,9 +99,9 @@ class GoogleCloudProvider(BaseProvider):
             self.log.debug("Waiting for changes to complete")
             time.sleep(self.CHANGE_LOOP_WAIT)
 
-        if gcloud_changes.status != 'done':
-            timeout = i * self.CHANGE_LOOP_WAIT
-            raise RuntimeError(f"Timeout reached after {timeout} seconds")
+            if gcloud_changes.status != 'done':
+                timeout = i * self.CHANGE_LOOP_WAIT
+                raise RuntimeError(f"Timeout reached after {timeout} seconds")
 
     def _create_gcloud_zone(self, dns_name):
         """Creates a google cloud ManagedZone with dns_name, and zone named
