@@ -24,7 +24,7 @@ class GoogleCloudProvider(BaseProvider):
 
     CHANGE_LOOP_WAIT = 5
 
-    def __init__(self, id, project=None, credentials_file=None,
+    def __init__(self, id, project=None, credentials_file=None, max_changes=1000,
                  *args, **kwargs):
 
         if credentials_file:
@@ -37,9 +37,29 @@ class GoogleCloudProvider(BaseProvider):
         self.log = getLogger(f'GoogleCloudProvider[{id}]')
         self.id = id
 
+        self.max_changes = max_changes
+
         self._gcloud_zones = {}
 
         super(GoogleCloudProvider, self).__init__(id, *args, **kwargs)
+    
+    def _dict_changes(self, changes):
+        dict_changes = {
+            'additions': [],
+            'deletions': [],
+            'updates': []
+        }
+
+        for change in changes:
+            class_name = change.__class__.name
+            if class_name == 'Create':
+                dict_changes['additions'].append(change)
+            elif class_name == 'Delete':
+                dict_changes['deletions'].append(change)
+            elif class_name == 'Update':
+                dict_changes['updates'].append(change)
+
+        return dict_changes
 
     def _apply(self, plan):
         """Required function of manager.py to actually apply a record change.
@@ -50,7 +70,7 @@ class GoogleCloudProvider(BaseProvider):
             :type return: void
         """
         desired = plan.desired
-        changes = plan.changes
+        changes = self._dict_changes(plan.changes)
 
         self.log.debug('_apply: zone=%s, len(changes)=%d', desired.name,
                        len(changes))
@@ -63,29 +83,38 @@ class GoogleCloudProvider(BaseProvider):
 
         gcloud_changes = gcloud_zone.changes()
 
-        for change in changes:
-            class_name = change.__class__.__name__
-            _rrset_func = getattr(self, f'_rrset_for_{change.record._type}')
-
-            if class_name == 'Create':
-                gcloud_changes.add_record_set(
-                _rrset_func(gcloud_zone, change.record))
-            elif class_name == 'Delete':
-                gcloud_changes.delete_record_set(
-                _rrset_func(gcloud_zone, change.record))
-            elif class_name == 'Update':
-                gcloud_changes.delete_record_set(
-                _rrset_func(gcloud_zone, change.existing))
-                gcloud_changes.add_record_set(
-                _rrset_func(gcloud_zone, change.new))
+        batches = []
+        
+        for op_type in ['deletions', 'additions', 'updates']:
+            if 0 < len(changes[op_type]) < self.max_changes:
+                batches.append(changes[op_type])
             else:
-                msg = f'Change type "{class_name}" for change ' \
-                    f'"{str(changes)}" is none of "Create", "Delete" or "Update'
-                raise RuntimeError(msg)
+                for i in range(0, len(changes[op_type]), self.max_changes):
+                    batches.append(changes[op_type][i:i + self.max_changes])
+        
+        for batch in batches:
+            for change in batch:
+                class_name = change.__class__.__name__
+                _rrset_func = getattr(self, f'_rrset_for_{change.record._type}')
 
-            if len(gcloud_changes.additions) == 1000 or len(gcloud_changes.deletions) == 1000:
-                self._really_apply(self, gcloud_changes)
-                gcloud_changes.reload()
+                if class_name == 'Create':
+                    gcloud_changes.add_record_set(
+                    _rrset_func(gcloud_zone, change.record))
+                elif class_name == 'Delete':
+                    gcloud_changes.delete_record_set(
+                    _rrset_func(gcloud_zone, change.record))
+                elif class_name == 'Update':
+                    gcloud_changes.delete_record_set(
+                    _rrset_func(gcloud_zone, change.existing))
+                    gcloud_changes.add_record_set(
+                    _rrset_func(gcloud_zone, change.new))
+                else:
+                    msg = f'Change type "{class_name}" for change ' \
+                        f'"{str(changes)}" is none of "Create", "Delete" or "Update'
+                    raise RuntimeError(msg)
+
+            self._really_apply(self, gcloud_changes)
+            gcloud_changes.reload()
 
     def _really_apply(self, gcloud_changes):
         gcloud_changes.create()
