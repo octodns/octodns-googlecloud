@@ -16,6 +16,12 @@ from octodns.provider.base import BaseProvider
 __VERSION__ = '0.0.1'
 
 
+def batched_iterator(iterable, batch_size):
+    n = len(iterable)
+    for i in range(0, n, batch_size):
+        yield iterable[i:min(i + batch_size, n)]
+
+
 class GoogleCloudProvider(BaseProvider):
     SUPPORTS = set(('A', 'AAAA', 'CAA', 'CNAME', 'MX', 'NAPTR',
                     'NS', 'PTR', 'SPF', 'SRV', 'TXT'))
@@ -25,13 +31,15 @@ class GoogleCloudProvider(BaseProvider):
     CHANGE_LOOP_WAIT = 5
 
     def __init__(self, id, project=None, credentials_file=None,
-                 *args, **kwargs):
+                 batch_size=1000, *args, **kwargs):
 
         if credentials_file:
             self.gcloud_client = dns.Client.from_service_account_json(
                 credentials_file, project=project)
         else:
             self.gcloud_client = dns.Client(project=project)
+
+        self.batch_size = batch_size
 
         # Logger
         self.log = getLogger(f'GoogleCloudProvider[{id}]')
@@ -61,42 +69,45 @@ class GoogleCloudProvider(BaseProvider):
         else:
             gcloud_zone = self.gcloud_zones.get(desired.name)
 
-        gcloud_changes = gcloud_zone.changes()
+        for batch in batched_iterator(changes, self.batch_size):
+            gcloud_changes = gcloud_zone.changes()
 
-        for change in changes:
-            class_name = change.__class__.__name__
-            _rrset_func = getattr(self, f'_rrset_for_{change.record._type}')
+            for change in changes:
+                class_name = change.__class__.__name__
+                _rrset_func = getattr(self,
+                                      f'_rrset_for_{change.record._type}')
 
-            if class_name == 'Create':
-                gcloud_changes.add_record_set(
-                    _rrset_func(gcloud_zone, change.record))
-            elif class_name == 'Delete':
-                gcloud_changes.delete_record_set(
-                    _rrset_func(gcloud_zone, change.record))
-            elif class_name == 'Update':
-                gcloud_changes.delete_record_set(
-                    _rrset_func(gcloud_zone, change.existing))
-                gcloud_changes.add_record_set(
-                    _rrset_func(gcloud_zone, change.new))
-            else:
-                msg = f'Change type "{class_name}" for change ' \
-                    f'"{str(change)}" is none of "Create", "Delete" or "Update'
-                raise RuntimeError(msg)
+                if class_name == 'Create':
+                    gcloud_changes.add_record_set(
+                        _rrset_func(gcloud_zone, change.record))
+                elif class_name == 'Delete':
+                    gcloud_changes.delete_record_set(
+                        _rrset_func(gcloud_zone, change.record))
+                elif class_name == 'Update':
+                    gcloud_changes.delete_record_set(
+                        _rrset_func(gcloud_zone, change.existing))
+                    gcloud_changes.add_record_set(
+                        _rrset_func(gcloud_zone, change.new))
+                else:
+                    msg = (f'Change type "{class_name}" for change '
+                           f'"{str(change)}" is none of "Create", "Delete" '
+                           'or "Update"')
+                    raise RuntimeError(msg)
 
-        gcloud_changes.create()
+            gcloud_changes.create()
 
-        for i in range(120):
-            gcloud_changes.reload()
-            # https://cloud.google.com/dns/api/v1/changes#resource
-            # status can be one of either "pending" or "done"
-            if gcloud_changes.status != 'pending':
-                break
-            self.log.debug("Waiting for changes to complete")
-            time.sleep(self.CHANGE_LOOP_WAIT)
+            for i in range(120):
+                gcloud_changes.reload()
+                # https://cloud.google.com/dns/api/v1/changes#resource
+                # status can be one of either "pending" or "done"
+                if gcloud_changes.status != 'pending':
+                    break
+                self.log.debug("Waiting for changes to complete")
+                time.sleep(self.CHANGE_LOOP_WAIT)
 
-        if gcloud_changes.status != 'done':
-            timeout = i * self.CHANGE_LOOP_WAIT
-            raise RuntimeError(f"Timeout reached after {timeout} seconds")
+            if gcloud_changes.status != 'done':
+                timeout = i * self.CHANGE_LOOP_WAIT
+                raise RuntimeError(f"Timeout reached after {timeout} seconds")
 
     def _create_gcloud_zone(self, dns_name):
         """Creates a google cloud ManagedZone with dns_name, and zone named
