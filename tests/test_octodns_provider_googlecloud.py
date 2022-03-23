@@ -9,7 +9,7 @@ from unittest import TestCase
 from unittest.mock import Mock, patch, PropertyMock
 
 from octodns.record import Create, Delete, Update, Record
-from octodns_googlecloud import GoogleCloudProvider
+from octodns_googlecloud import GoogleCloudProvider, _batched_iterator
 
 zone = Zone(name='unit.tests.', sub_zones=[])
 octo_records = []
@@ -457,3 +457,49 @@ class TestGoogleCloudProvider(TestCase):
             DummyResourceRecordSet(
                 'unit.tests.', 'TXT', 0, ['abcd; ef;g', 'hij\\; klm\\;n'])
         ))
+
+
+class TestBatchedIterator(TestCase):
+
+    def test_batched_iterator(self):
+        self.assertEqual([], list(_batched_iterator([], 10)))
+        self.assertEqual([[1]], list(_batched_iterator([1], 10)))
+        self.assertEqual([[1, 2]], list(_batched_iterator([1, 2], 10)))
+
+        self.assertEqual([[1, 2, 3]], list(_batched_iterator([1, 2, 3], 4)))
+        self.assertEqual([[1, 2, 3]], list(_batched_iterator([1, 2, 3], 3)))
+        self.assertEqual([[1, 2], [3]], list(_batched_iterator([1, 2, 3], 2)))
+        self.assertEqual([[1], [2], [3]],
+                         list(_batched_iterator([1, 2, 3], 1)))
+
+        i = _batched_iterator(range(999), 1000)
+        a = next(i)
+        self.assertEqual(999, len(a))
+        self.assertEqual(range(0, 999), a)
+        with self.assertRaises(StopIteration):
+            next(i)
+
+        i = _batched_iterator(range(1000), 1000)
+        a = next(i)
+        self.assertEqual(1000, len(a))
+        self.assertEqual(range(0, 1000), a)
+        with self.assertRaises(StopIteration):
+            next(i)
+
+        i = _batched_iterator(range(1001), 1000)
+        a = next(i)
+        self.assertEqual(1000, len(a))
+        self.assertEqual(range(0, 1000), a)
+        b = next(i)
+        self.assertEqual(1, len(b))
+        self.assertEqual(range(1000, 1001), b)
+        with self.assertRaises(StopIteration):
+            next(i)
+
+        a, b, c = _batched_iterator(range(2048), 1000)
+        self.assertEqual(1000, len(a))
+        self.assertEqual(range(0, 1000), a)
+        self.assertEqual(1000, len(b))
+        self.assertEqual(range(1000, 2000), b)
+        self.assertEqual(48, len(c))
+        self.assertEqual(range(2000, 2048), c)

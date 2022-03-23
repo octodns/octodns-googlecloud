@@ -16,7 +16,7 @@ from octodns.provider.base import BaseProvider
 __VERSION__ = '0.0.1'
 
 
-def batched_iterator(iterable, batch_size):
+def _batched_iterator(iterable, batch_size):
     n = len(iterable)
     for i in range(0, n, batch_size):
         yield iterable[i:min(i + batch_size, n)]
@@ -69,7 +69,7 @@ class GoogleCloudProvider(BaseProvider):
         else:
             gcloud_zone = self.gcloud_zones.get(desired.name)
 
-        for batch in batched_iterator(changes, self.batch_size):
+        for batch in _batched_iterator(changes, self.batch_size):
             gcloud_changes = gcloud_zone.changes()
 
             for change in changes:
