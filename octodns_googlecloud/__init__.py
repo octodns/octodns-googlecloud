@@ -72,7 +72,7 @@ class GoogleCloudProvider(BaseProvider):
         for batch in _batched_iterator(changes, self.batch_size):
             gcloud_changes = gcloud_zone.changes()
 
-            for change in changes:
+            for change in batch:
                 class_name = change.__class__.__name__
                 _rrset_func = getattr(self,
                                       f'_rrset_for_{change.record._type}')
