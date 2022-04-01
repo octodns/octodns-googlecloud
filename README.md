@@ -47,6 +47,12 @@ providers:
     # "project" parameter needs to be set, else it will fall back to the
     #  "default credentials"
     # credentials_file: ~/google_cloud_credentials_file.json
+    #
+    # GoogleCloudProvider submits changes in batches. The default batch size
+    # is 1000, which is also roughly the maximum size that google supports.
+    # If your plan & apply makes more than batch_size changes they will be
+    # broken up into smaller sets of at most that size.
+    # batch_size: 1000
 ```
 
 ### Support Information
