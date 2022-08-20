@@ -300,7 +300,7 @@ class TestGoogleCloudProvider(TestCase):
     def test__apply(self, *_):
         class DummyDesired:
             def __init__(self, name, changes):
-                self.name = name
+                self.name = self.desired_name = name
                 self.changes = changes
 
         apply_z = Zone("unit.tests.", [])
