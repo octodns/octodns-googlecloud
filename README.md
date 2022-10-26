@@ -7,7 +7,7 @@ An [octoDNS](https://github.com/octodns/octodns/) provider that targets [Google 
 #### Command line
 
 ```
-pip install octodns_googlecloud
+pip install octodns-googlecloud
 ```
 
 #### requirements.txt/setup.py
@@ -19,7 +19,7 @@ Pinning specific versions or SHAs is recommended to avoid unplanned upgrades.
 ```
 # Start with the latest versions and don't just copy what's here
 octodns==0.9.14
-octodns_googlecloud==0.0.1
+octodns-googlecloud==0.0.1
 ```
 
 ##### SHAs
