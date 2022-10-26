@@ -52,7 +52,7 @@ setup(
         'google-cloud-core>=1.4.1',
         'google-cloud-dns>=0.32.0',
         'octodns>=0.9.14',
-        'protobuf<=4.21.1',
+        'protobuf>=4.21.2',
     ),
     license='MIT',
     long_description=long_description,
