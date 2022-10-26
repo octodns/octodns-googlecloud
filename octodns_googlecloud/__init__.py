@@ -68,7 +68,7 @@ class GoogleCloudProvider(BaseProvider):
 
         self._gcloud_zones = {}
 
-        super(GoogleCloudProvider, self).__init__(id, *args, **kwargs)
+        super().__init__(id, *args, **kwargs)
 
     def _apply(self, plan):
         """Required function of manager.py to actually apply a record change.
