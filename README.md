@@ -18,8 +18,8 @@ Pinning specific versions or SHAs is recommended to avoid unplanned upgrades.
 
 ```
 # Start with the latest versions and don't just copy what's here
-octodns==0.9.14
-octodns-googlecloud==0.0.1
+octodns==0.9.21
+octodns-googlecloud==0.0.2
 ```
 
 ##### SHAs
@@ -60,6 +60,10 @@ providers:
 #### Records
 
 GoogleCloudProvider supports A, AAAA, CAA, CNAME, MX, NAPTR, NS, PTR, SPF, SRV, and TXT
+
+#### Root NS records
+
+GoogleCloudProvider support full root NS record management
 
 #### Dynamic
 
