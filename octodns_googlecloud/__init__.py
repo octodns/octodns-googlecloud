@@ -40,6 +40,7 @@ class GoogleCloudProvider(BaseProvider):
     )
     SUPPORTS_GEO = False
     SUPPORTS_DYNAMIC = False
+    SUPPORTS_ROOT_NS = True
 
     CHANGE_LOOP_WAIT = 5
 
