@@ -13,7 +13,7 @@ from google.cloud import dns
 from octodns.record import Record
 from octodns.provider.base import BaseProvider
 
-__VERSION__ = '0.0.2'
+__VERSION__ = '0.0.1'
 
 
 def _batched_iterator(iterable, batch_size):
