@@ -18,8 +18,8 @@ Pinning specific versions or SHAs is recommended to avoid unplanned upgrades.
 
 ```
 # Start with the latest versions and don't just copy what's here
-octodns==0.9.21
-octodns-googlecloud==0.0.2
+octodns==0.9.14
+octodns-googlecloud==0.0.1
 ```
 
 ##### SHAs
