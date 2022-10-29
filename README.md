@@ -61,6 +61,10 @@ providers:
 
 GoogleCloudProvider supports A, AAAA, CAA, CNAME, MX, NAPTR, NS, PTR, SPF, SRV, and TXT
 
+#### Root NS records
+
+GoogleCloudProvider support full root NS record management
+
 #### Dynamic
 
 GoogleCloudProvider does not support dynamic records.
