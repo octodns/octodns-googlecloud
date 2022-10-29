@@ -1,4 +1,4 @@
-## v0.0.2 - 2022-??-??
+## v0.0.2 - 2022-10-29
 
 * Enable support for root level NS records (`SUPPORTS_ROOT_NS=true`)
 
