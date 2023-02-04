@@ -2,16 +2,16 @@
 #
 #
 
+import re
 import shlex
 import time
 from logging import getLogger
 from uuid import uuid4
-import re
 
 from google.cloud import dns
 
-from octodns.record import Record
 from octodns.provider.base import BaseProvider
+from octodns.record import Record
 
 __VERSION__ = '0.0.2'
 
@@ -53,7 +53,6 @@ class GoogleCloudProvider(BaseProvider):
         *args,
         **kwargs,
     ):
-
         if credentials_file:
             self.gcloud_client = dns.Client.from_service_account_json(
                 credentials_file, project=project
