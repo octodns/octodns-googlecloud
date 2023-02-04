@@ -2,13 +2,13 @@
 #
 #
 
-from octodns.zone import Zone
-from octodns.provider.base import Plan, BaseProvider
-
 from unittest import TestCase
-from unittest.mock import Mock, patch, PropertyMock
+from unittest.mock import Mock, PropertyMock, patch
 
-from octodns.record import Create, Delete, Update, Record
+from octodns.provider.base import BaseProvider, Plan
+from octodns.record import Create, Delete, Record, Update
+from octodns.zone import Zone
+
 from octodns_googlecloud import GoogleCloudProvider, _batched_iterator
 
 zone = Zone(name='unit.tests.', sub_zones=[])
@@ -437,7 +437,6 @@ class TestGoogleCloudProvider(TestCase):
                     page_token="MOCK_PAGE_TOKEN",
                 )
             elif page_token == "MOCK_PAGE_TOKEN":
-
                 return DummyIterator(
                     [
                         DummyResourceRecordSet(*v)

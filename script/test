@@ -16,6 +16,4 @@ fi
 
 export GOOGLE_APPLICATION_CREDENTIALS=
 
-export PYTHONPATH=.:$PYTHONPATH
-
 pytest --disable-network "$@"
