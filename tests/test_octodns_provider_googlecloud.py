@@ -35,6 +35,9 @@ octo_records.append(
     )
 )
 octo_records.append(
+    Record.new(zone, '', {'ttl': 3, 'type': 'ALIAS', 'value': 'a.unit.tests.'})
+)
+octo_records.append(
     Record.new(
         zone,
         'mx1',
@@ -173,6 +176,7 @@ resource_record_sets = [
     (u'a.unit.tests.', u'A', 1, [u'1.1.1.1', u'1.2.3.4']),
     (u'aa.unit.tests.', u'A', 9001, [u'1.2.4.3']),
     (u'aaa.unit.tests.', u'A', 2, [u'1.1.1.3']),
+    (u'unit.tests.', u'ALIAS', 3, [u'a.unit.tests.']),
     (u'cname.unit.tests.', u'CNAME', 3, [u'a.unit.tests.']),
     (
         u'mx1.unit.tests.',
