@@ -27,6 +27,7 @@ class GoogleCloudProvider(BaseProvider):
         (
             'A',
             'AAAA',
+            'ALIAS',
             'CAA',
             'CNAME',
             'MX',
@@ -301,6 +302,8 @@ class GoogleCloudProvider(BaseProvider):
 
     _data_for_NS = _data_for_A
 
+    _data_for_ALIAS = _data_for_CNAME
+
     _data_for_PTR = _data_for_CNAME
 
     _fix_semicolons = re.compile(r'(?<!\\);')
@@ -368,6 +371,8 @@ class GoogleCloudProvider(BaseProvider):
         )
 
     _rrset_for_NS = _rrset_for_A
+
+    _rrset_for_ALIAS = _rrset_for_CNAME
 
     _rrset_for_PTR = _rrset_for_CNAME
 
