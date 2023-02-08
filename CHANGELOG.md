@@ -1,3 +1,7 @@
+## v0.0.3 - 2023-02-08 - AKA
+
+* Support for `ALIAS` record types
+
 ## v0.0.2 - 2022-10-29
 
 * Enable support for root level NS records (`SUPPORTS_ROOT_NS=true`)
