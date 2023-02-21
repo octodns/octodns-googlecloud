@@ -378,7 +378,7 @@ class GoogleCloudProvider(BaseProvider):
 
     def _rrset_for_SPF(self, gcloud_zone, record):
         return gcloud_zone.resource_record_set(
-            record.fqdn, record._type, record.ttl, record.chunked_values
+            record.fqdn, record._type, record.ttl, [x.replace(r'\\"',r'\"') for x in record.chunked_values]
         )
 
     def _rrset_for_SRV(self, gcloud_zone, record):
