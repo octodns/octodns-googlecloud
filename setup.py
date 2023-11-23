@@ -38,6 +38,7 @@ setup(
             'isort>=5.11.5',
             'pyflakes>=2.2.0',
             'readme_renderer[md]>=26.0',
+            'setuptools>=69.0.2',
             'twine>=3.4.2',
         ),
         'test': tests_require,
