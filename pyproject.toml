@@ -11,7 +11,9 @@ line_length=80
 sections="FUTURE,STDLIB,THIRDPARTY,OCTODNS,FIRSTPARTY,LOCALFOLDER"
 
 [tool.pytest.ini_options]
-filterwarnings = [
-    'error',
-]
+# google cloud uses lots of deprecated stuff from setuptools/distutils so this
+# would be a waste of time...
+#filterwarnings = [
+#    'error',
+#]
 pythonpath = "."
