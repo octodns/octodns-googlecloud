@@ -16,9 +16,10 @@ from octodns.record import Record
 # TODO: remove __VERSION__ with the next major version release
 __version__ = __VERSION__ = '0.0.3'
 
+
 def add_trailing_dot(value):
     """
-    Required function to handle cases where CNAMEs being pushed 
+    Required function to handle cases where CNAMEs being pushed
     to Google Cloud DNS do not end with a dot.
 
     :param value: Contains the CNAME record value
@@ -26,7 +27,7 @@ def add_trailing_dot(value):
 
     :type return: str
     """
-    if (value[-1] != '.'):
+    if value[-1] != '.':
         value = value + '.'
     return value
 
