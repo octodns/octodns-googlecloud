@@ -16,6 +16,20 @@ from octodns.record import Record
 # TODO: remove __VERSION__ with the next major version release
 __version__ = __VERSION__ = '0.0.3'
 
+def add_trailing_dot(value):
+    """
+    Required function to handle cases where CNAMEs being pushed 
+    to Google Cloud DNS do not end with a dot.
+
+    :param value: Contains the CNAME record value
+    :type  value: str
+
+    :type return: str
+    """
+    if (value[-1] != '.'):
+        value = value + '.'
+    return value
+
 
 def _batched_iterator(iterable, batch_size):
     n = len(iterable)
@@ -347,6 +361,7 @@ class GoogleCloudProvider(BaseProvider):
         )
 
     def _rrset_for_CNAME(self, gcloud_zone, record):
+        record.value = add_trailing_dot(record.value)
         return gcloud_zone.resource_record_set(
             record.fqdn, record._type, record.ttl, [record.value]
         )
