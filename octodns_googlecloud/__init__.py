@@ -296,7 +296,7 @@ class GoogleCloudProvider(BaseProvider):
     def _data_for_MX(self, gcloud_record):
         return {
             'values': [
-                {"preference": v[0], "exchange": v[1]}
+                {"preference": v[0], "exchange": add_trailing_dot(v[1])}
                 for v in [shlex.split(g) for g in gcloud_record.rrdatas]
             ]
         }
@@ -372,7 +372,10 @@ class GoogleCloudProvider(BaseProvider):
             record.fqdn,
             record._type,
             record.ttl,
-            [f'{v.preference} {v.exchange}' for v in record.values],
+            [
+                f'{v.preference} {add_trailing_dot(v.exchange)}'
+                for v in record.values
+            ],
         )
 
     def _rrset_for_NAPTR(self, gcloud_zone, record):
