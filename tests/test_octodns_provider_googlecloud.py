@@ -9,7 +9,11 @@ from octodns.provider.base import BaseProvider, Plan
 from octodns.record import Create, Delete, Record, Update
 from octodns.zone import Zone
 
-from octodns_googlecloud import GoogleCloudProvider, _batched_iterator
+from octodns_googlecloud import (
+    GoogleCloudProvider,
+    _batched_iterator,
+    add_trailing_dot,
+)
 
 zone = Zone(name='unit.tests.', sub_zones=[])
 octo_records = []
@@ -280,6 +284,10 @@ class DummyIterator:
 
 
 class TestGoogleCloudProvider(TestCase):
+    def test_trailing_dot(self):
+        self.assertEqual(add_trailing_dot('unit.tests'), 'unit.tests.')
+        self.assertEqual(add_trailing_dot('unit.tests.'), 'unit.tests.')
+
     @patch('octodns_googlecloud.dns')
     def _get_provider(*args):
         '''Returns a mock GoogleCloudProvider object to use in testing.

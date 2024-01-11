@@ -17,6 +17,21 @@ from octodns.record import Record
 __version__ = __VERSION__ = '0.0.3'
 
 
+def add_trailing_dot(value):
+    """
+    Required function to handle cases where records being pushed
+    to Google Cloud DNS do not end with a dot.
+
+    :param value: Contains the record value
+    :type  value: str
+
+    :type return: str
+    """
+    if value[-1] != '.':
+        value = f'{value}.'
+    return value
+
+
 def _batched_iterator(iterable, batch_size):
     n = len(iterable)
     for i in range(0, n, batch_size):
@@ -347,6 +362,7 @@ class GoogleCloudProvider(BaseProvider):
         )
 
     def _rrset_for_CNAME(self, gcloud_zone, record):
+        record.value = add_trailing_dot(record.value)
         return gcloud_zone.resource_record_set(
             record.fqdn, record._type, record.ttl, [record.value]
         )
@@ -356,7 +372,10 @@ class GoogleCloudProvider(BaseProvider):
             record.fqdn,
             record._type,
             record.ttl,
-            [f'{v.preference} {v.exchange}' for v in record.values],
+            [
+                f'{v.preference} {add_trailing_dot(v.exchange)}'
+                for v in record.values
+            ],
         )
 
     def _rrset_for_NAPTR(self, gcloud_zone, record):
