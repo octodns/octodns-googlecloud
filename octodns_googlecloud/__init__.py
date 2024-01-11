@@ -28,7 +28,7 @@ def add_trailing_dot(value):
     :type return: str
     """
     if value[-1] != '.':
-        value = value + '.'
+        value = f'{value}.'
     return value
 
 
