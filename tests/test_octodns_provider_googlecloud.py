@@ -286,6 +286,7 @@ class DummyIterator:
 class TestGoogleCloudProvider(TestCase):
     def test_trailing_dot(self):
         self.assertEqual(add_trailing_dot('unit.tests'), 'unit.tests.')
+        self.assertEqual(add_trailing_dot('unit.tests.'), 'unit.tests.')
 
     @patch('octodns_googlecloud.dns')
     def _get_provider(*args):
