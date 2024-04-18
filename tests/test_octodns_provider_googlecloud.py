@@ -351,12 +351,12 @@ class TestGoogleCloudProvider(TestCase):
         changes.append(Delete(delete_r))
         changes.append(Update(existing=update_existing_r, new=update_new_r))
 
+        existing = Zone('unit.tests.', [])
+        existing.add_record(update_existing_r)
+        existing.add_record(delete_r)
         provider.apply(
             Plan(
-                existing=[update_existing_r, delete_r],
-                desired=desired,
-                changes=changes,
-                exists=True,
+                existing=existing, desired=desired, changes=changes, exists=True
             )
         )
 
@@ -394,9 +394,12 @@ class TestGoogleCloudProvider(TestCase):
         type(status_mock).status = "pending"
 
         with self.assertRaises(RuntimeError):
+            existing = Zone('unit.tests.', [])
+            existing.add_record(update_existing_r)
+            existing.add_record(delete_r)
             provider.apply(
                 Plan(
-                    existing=[update_existing_r, delete_r],
+                    existing=existing,
                     desired=desired,
                     changes=changes,
                     exists=True,
