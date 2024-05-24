@@ -67,6 +67,7 @@ class GoogleCloudProvider(BaseProvider):
         project=None,
         credentials_file=None,
         batch_size=1000,
+        zone_prefix=None,
         *args,
         **kwargs,
     ):
@@ -82,7 +83,7 @@ class GoogleCloudProvider(BaseProvider):
         # Logger
         self.log = getLogger(f'GoogleCloudProvider[{id}]')
         self.id = id
-
+        self.zone_prefix = zone_prefix
         self._gcloud_zones = {}
 
         super().__init__(id, *args, **kwargs)
@@ -211,7 +212,11 @@ class GoogleCloudProvider(BaseProvider):
 
         gcloud_zones = self.gcloud_client.list_zones(page_token=page_token)
         for gcloud_zone in gcloud_zones:
-            self._gcloud_zones[gcloud_zone.dns_name] = gcloud_zone
+            if self.zone_prefix:
+                if gcloud_zone.name.startswith(self.zone_prefix):
+                    self._gcloud_zones[gcloud_zone.dns_name] = gcloud_zone
+            else:
+                self._gcloud_zones[gcloud_zone.dns_name] = gcloud_zone
 
         if gcloud_zones.next_page_token:
             self._get_cloud_zones(gcloud_zones.next_page_token)

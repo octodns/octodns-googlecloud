@@ -48,6 +48,11 @@ providers:
     #  "default credentials"
     # credentials_file: ~/google_cloud_credentials_file.json
     #
+    # If multiple DNS zone have the same DNS name, it's possible
+    # to filter on zone name field based on his prefix. It's a workaround 
+    # to handle private/public zone type based on the prefix zone name. 
+    # zone_prefix: private
+    #
     # GoogleCloudProvider submits changes in batches. The default batch size
     # is 1000, which is also roughly the maximum size that google supports.
     # If your plan & apply makes more than batch_size changes they will be
