@@ -46,7 +46,7 @@ setup(
     install_requires=(
         'google-cloud-core>=1.4.1',
         'google-cloud-dns>=0.32.0',
-        'octodns>=0.9.14',
+        'octodns>=1.5.0',
         'protobuf>=4.21.2,<=4.21.8',
     ),
     license='MIT',
