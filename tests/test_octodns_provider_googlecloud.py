@@ -171,6 +171,30 @@ octo_records.append(
         },
     )
 )
+octo_records.append(
+    Record.new(
+        zone,
+        'ds',
+        {
+            'ttl': 9,
+            'type': 'DS',
+            'values': [
+                {
+                    'key_tag': 0,
+                    'algorithm': 1,
+                    'digest_type': 2,
+                    'digest': 'abcdef0123456',
+                },
+                {
+                    'key_tag': 1,
+                    'algorithm': 2,
+                    'digest_type': 3,
+                    'digest': '0123456abcdef',
+                },
+            ],
+        },
+    )
+)
 for record in octo_records:
     zone.add_record(record)
 
@@ -215,6 +239,12 @@ resource_record_sets = [
         ],
     ),
     (u'caa.unit.tests.', u'CAA', 9, [u'0 issue ca.unit.tests']),
+    (
+        u'ds.unit.tests.',
+        u'DS',
+        9,
+        [u'0 1 2 abcdef0123456', '1 2 3 0123456abcdef'],
+    ),
 ]
 
 
