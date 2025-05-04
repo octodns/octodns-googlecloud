@@ -1,4 +1,4 @@
-## v0.0.4 - 2025-??-?? - ???
+## v1.0.0 - 2025-05-04 - Long overdue 1.0
 
 * Support for `DS` record types
 * Address pending octoDNS 2.x deprecations, require minimum of 1.5.x
