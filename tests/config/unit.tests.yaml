@@ -76,6 +76,14 @@ dname:
   ttl: 300
   type: DNAME
   value: unit.tests.
+ds:
+  ttl: 9
+  type: DS
+  value:
+    key_tag: 0
+    algorithm: 1
+    digest_type: 2
+    digest: abcdef0123456
 excluded:
   octodns:
     excluded:

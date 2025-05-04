@@ -46,6 +46,7 @@ class GoogleCloudProvider(BaseProvider):
             'ALIAS',
             'CAA',
             'CNAME',
+            'DS',
             'MX',
             'NAPTR',
             'NS',
@@ -293,6 +294,19 @@ class GoogleCloudProvider(BaseProvider):
     def _data_for_CNAME(self, gcloud_record):
         return {'value': gcloud_record.rrdatas[0]}
 
+    def _data_for_DS(self, gcloud_record):
+        return {
+            'values': [
+                {
+                    'key_tag': v[0],
+                    'algorithm': v[1],
+                    'digest_type': v[2],
+                    'digest': v[3],
+                }
+                for v in [shlex.split(g) for g in gcloud_record.rrdatas]
+            ]
+        }
+
     def _data_for_MX(self, gcloud_record):
         return {
             'values': [
@@ -365,6 +379,17 @@ class GoogleCloudProvider(BaseProvider):
         record.value = add_trailing_dot(record.value)
         return gcloud_zone.resource_record_set(
             record.fqdn, record._type, record.ttl, [record.value]
+        )
+
+    def _rrset_for_DS(self, gcloud_zone, record):
+        return gcloud_zone.resource_record_set(
+            record.fqdn,
+            record._type,
+            record.ttl,
+            [
+                f'{v.key_tag} {v.algorithm} {v.digest_type} {v.digest}'
+                for v in record.values
+            ],
         )
 
     def _rrset_for_MX(self, gcloud_zone, record):

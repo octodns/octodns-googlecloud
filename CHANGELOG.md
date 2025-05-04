@@ -1,5 +1,6 @@
-## v0.0.4 - 2024-??-?? - ???
+## v0.0.4 - 2025-??-?? - ???
 
+* Support for `DS` record types
 * Address pending octoDNS 2.x deprecations, require minimum of 1.5.x
 
 ## v0.0.3 - 2023-02-08 - AKA
