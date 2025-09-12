@@ -59,7 +59,7 @@ def dns_name_to_zone_name(prefix: str|None, dns_name: str, suffix: str|None) -> 
     # Zone name must begin with a letter, end with a letter or digit,
     # and only contain lowercase letters, digits or dashes,
     # and be 63 characters or less
-    zone_name = "-".join(filter(None, [prefix, dns_name.replace(".", "-"), suffix]))
+    zone_name = "-".join(filter(None, [prefix, dns_name.rstrip(".").replace(".", "-"), suffix]))
     zone_name = zone_name[:63]
     return zone_name
 
