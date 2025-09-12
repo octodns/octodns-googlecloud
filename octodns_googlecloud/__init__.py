@@ -37,6 +37,31 @@ def _batched_iterator(iterable, batch_size):
     for i in range(0, n, batch_size):
         yield iterable[i : min(i + batch_size, n)]
 
+def dns_name_to_zone_name(prefix: str|None, dns_name: str, suffix: str|None) -> str:
+    """Convert a DNS name to a valid Google Cloud DNS zone name, applying
+    optional prefix and suffix.
+
+    If the provided prefix or suffix is None, it's not applied.
+
+    Dots are replaced with dashes, and string is truncated to 63 characters if
+    necessary.
+
+    :param prefix: The prefix to apply to the zone name.
+    :type  prefix: str | None
+    :param dns_name: The DNS name to convert.
+    :type  dns_name: str
+    :param suffix: The suffix to apply to the zone name.
+    :type  suffix: str | None
+
+    :return: The converted zone name.
+    :rtype: str
+    """
+    # Zone name must begin with a letter, end with a letter or digit,
+    # and only contain lowercase letters, digits or dashes,
+    # and be 63 characters or less
+    zone_name = "-".join(filter(None, [prefix, dns_name.replace(".", "-"), suffix]))
+    zone_name = zone_name[:63]
+    return zone_name
 
 class GoogleCloudProvider(BaseProvider):
     SUPPORTS = set(
@@ -68,6 +93,8 @@ class GoogleCloudProvider(BaseProvider):
         project=None,
         credentials_file=None,
         batch_size=1000,
+        zone_prefix: str|None = None,
+        zone_suffix: str|None = None,
         *args,
         **kwargs,
     ):
@@ -79,6 +106,9 @@ class GoogleCloudProvider(BaseProvider):
             self.gcloud_client = dns.Client(project=project)
 
         self.batch_size = batch_size
+
+        self.zone_prefix = zone_prefix
+        self.zone_suffix = zone_suffix
 
         # Logger
         self.log = getLogger(f'GoogleCloudProvider[{id}]')
@@ -166,7 +196,7 @@ class GoogleCloudProvider(BaseProvider):
         # Zone name must begin with a letter, end with a letter or digit,
         # and only contain lowercase letters, digits or dashes,
         # and be 63 characters or less
-        zone_name = f'zone-{dns_name.replace(".", "-")}-{uuid4().hex}'[:63]
+        zone_name = dns_name_to_zone_name(self.zone_prefix, dns_name, self.zone_suffix)
 
         gcloud_zone = self.gcloud_client.zone(name=zone_name, dns_name=dns_name)
         gcloud_zone.create(client=self.gcloud_client)
@@ -203,6 +233,19 @@ class GoogleCloudProvider(BaseProvider):
                 # yield from is in python 3 only.
                 yield gcloud_record
 
+    def _is_concerned_zone(self, zone_name: str, dns_name: str) -> bool:
+        """Check if the zone_name is one we are to manage, based on the
+        configured prefix and suffix.
+
+        :param zone_name: The name of the zone to check.
+        :type  zone_name: str
+        :param dns_name: The DNS name of the zone to check.
+        :type  dns_name: str
+        :return: True if the zone is to be managed, False otherwise.
+        :rtype: bool
+        """
+        return zone_name == dns_name_to_zone_name(self.zone_prefix, dns_name, self.zone_suffix)
+
     def _get_cloud_zones(self, page_token=None):
         """Load all ManagedZones into the self._gcloud_zones dict which is
         mapped with the dns_name as key.
@@ -212,7 +255,12 @@ class GoogleCloudProvider(BaseProvider):
 
         gcloud_zones = self.gcloud_client.list_zones(page_token=page_token)
         for gcloud_zone in gcloud_zones:
-            self._gcloud_zones[gcloud_zone.dns_name] = gcloud_zone
+            if self._is_concerned_zone(gcloud_zone.name, gcloud_zone.dns_name):
+                if gcloud_zone.dns_name in self._gcloud_zones:
+                    raise NotImplementedError(
+                        f'Multiple zone with the same name not supported, concerned DNS_NAME:{gcloud_zone.dns_name}'
+                    )
+                self._gcloud_zones[gcloud_zone.dns_name] = gcloud_zone
 
         if gcloud_zones.next_page_token:
             self._get_cloud_zones(gcloud_zones.next_page_token)
