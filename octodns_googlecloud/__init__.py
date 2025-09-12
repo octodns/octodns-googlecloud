@@ -376,9 +376,9 @@ class GoogleCloudProvider(BaseProvider):
         )
 
     def _rrset_for_CNAME(self, gcloud_zone, record):
-        record.value = add_trailing_dot(record.value)
+        value = add_trailing_dot(record.value)
         return gcloud_zone.resource_record_set(
-            record.fqdn, record._type, record.ttl, [record.value]
+            record.fqdn, record._type, record.ttl, [value]
         )
 
     def _rrset_for_DS(self, gcloud_zone, record):
