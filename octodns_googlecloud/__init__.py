@@ -69,7 +69,7 @@ class GoogleCloudProvider(BaseProvider):
         project=None,
         credentials_file=None,
         batch_size=1000,
-        private: bool | None = None,
+        private=None,
         *args,
         **kwargs,
     ):
