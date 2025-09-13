@@ -69,7 +69,7 @@ class GoogleCloudProvider(BaseProvider):
         project=None,
         credentials_file=None,
         batch_size=1000,
-        private: bool|None = None,
+        private: bool | None = None,
         *args,
         **kwargs,
     ):
@@ -109,8 +109,6 @@ class GoogleCloudProvider(BaseProvider):
 
         # Get gcloud zone, or create one if none existed before.
         if desired.name not in self.gcloud_zones:
-            if self.private:
-                raise NotImplementedError(f"Private zone creation is not supported in GCP. Configure the zone manually: {desired.name}")
             gcloud_zone = self._create_gcloud_zone(desired.name)
         else:
             gcloud_zone = self.gcloud_zones.get(desired.name)
@@ -209,7 +207,7 @@ class GoogleCloudProvider(BaseProvider):
                 # yield from is in python 3 only.
                 yield gcloud_record
 
-    def _is_zone_private(self, zone:ManagedZone) -> bool:
+    def _is_zone_private(self, zone: ManagedZone) -> bool:
         """Determine if a ManagedZone is private.
         :param zone: zone to check
         :type zone: google.cloud.dns.ManagedZone
@@ -218,7 +216,7 @@ class GoogleCloudProvider(BaseProvider):
         """
         return zone._properties.get('visibility', '') == 'private'
 
-    def _filter_zone(self, zone:ManagedZone) -> bool:
+    def _filter_zone(self, zone: ManagedZone) -> bool:
         """Determine if the zone matches filtering criteria.
 
         :param zone: zone to check

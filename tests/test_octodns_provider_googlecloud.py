@@ -274,9 +274,10 @@ class DummyResourceRecordSet:
 
 
 class DummyGoogleCloudZone:
-    def __init__(self, dns_name, name=""):
+    def __init__(self, dns_name, name="", properties={"visibility": "public"}):
         self.dns_name = dns_name
         self.name = name
+        self._properties = properties
 
     def resource_record_set(self, *args):
         return DummyResourceRecordSet(*args)
@@ -325,6 +326,24 @@ class TestGoogleCloudProvider(TestCase):
         :type return: GoogleCloudProvider
         '''
         return GoogleCloudProvider(id=1, project="mock")
+
+    @patch('octodns_googlecloud.dns')
+    def _get_private_provider(*args):
+        '''
+        Returns a mock GoogleCloudProvider object to use in testing.
+
+        :type return: GoogleCloudProvider
+        '''
+        return GoogleCloudProvider(id=1, project="mock", private=True)
+
+    @patch('octodns_googlecloud.dns')
+    def _get_public_provider(*args):
+        '''
+        Returns a mock GoogleCloudProvider object to use in testing.
+
+        :type return: GoogleCloudProvider
+        '''
+        return GoogleCloudProvider(id=1, project="mock", private=False)
 
     @patch('octodns_googlecloud.dns')
     def test___init__(self, *_):
@@ -560,6 +579,66 @@ class TestGoogleCloudProvider(TestCase):
             provider.gcloud_zones.get("nonexistent.zone"),
             msg="Check that nonexistent zones return None when"
             "there's no create=True flag",
+        )
+
+        dummy_public_zone = DummyGoogleCloudZone(
+            "unit.public.tests", properties={"visibility": "public"}
+        )
+        dummy_private_zone = DummyGoogleCloudZone(
+            "unit.private.tests", properties={"visibility": "private"}
+        )
+        provider.gcloud_client.list_zones = Mock(
+            return_value=DummyIterator([dummy_public_zone, dummy_private_zone])
+        )
+        # No filtering, should return both public and private zones
+        provider.private = None
+        gcloud_zone = provider.gcloud_zones
+        self.assertIsNotNone(gcloud_zone)
+        self.assertIn(
+            dummy_public_zone,
+            gcloud_zone.values(),
+            msg="Check public zones are returned when there's no filtering",
+        )
+        self.assertIn(
+            dummy_private_zone,
+            gcloud_zone.values(),
+            msg="Check private zones are returned when there's no filtering",
+        )
+
+        # Filtering for private zones only
+        private_provider = self._get_private_provider()
+        private_provider.gcloud_client.list_zones = Mock(
+            return_value=DummyIterator([dummy_private_zone, dummy_public_zone])
+        )
+        gcloud_zone = private_provider.gcloud_zones
+        self.assertIsNotNone(gcloud_zone)
+        self.assertIn(
+            dummy_private_zone,
+            gcloud_zone.values(),
+            msg="Check that only private zones are returned when filtering for private zones",
+        )
+        self.assertNotIn(
+            dummy_public_zone,
+            gcloud_zone.values(),
+            msg="Check that public zones are not returned when filtering for private zones",
+        )
+
+        # Filtering for public zones only
+        public_provider = self._get_public_provider()
+        public_provider.gcloud_client.list_zones = Mock(
+            return_value=DummyIterator([dummy_private_zone, dummy_public_zone])
+        )
+        gcloud_zone = public_provider.gcloud_zones
+        self.assertIsNotNone(gcloud_zone)
+        self.assertIn(
+            dummy_public_zone,
+            gcloud_zone.values(),
+            msg="Check that only public zones are returned when filtering for public zones",
+        )
+        self.assertNotIn(
+            dummy_private_zone,
+            gcloud_zone.values(),
+            msg="Check that private zones are not returned when filtering for public zones",
         )
 
     def test__get_rrsets(self):
