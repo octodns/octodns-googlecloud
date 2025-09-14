@@ -226,7 +226,9 @@ class GoogleCloudProvider(BaseProvider):
         """
         if self.private is None:
             return True
-        return self.private is None or self.private == self._is_zone_private(zone)
+        return self.private is None or self.private == self._is_zone_private(
+            zone
+        )
 
     def _get_cloud_zones(self, page_token=None):
         """Load all ManagedZones into the self._gcloud_zones dict which is
