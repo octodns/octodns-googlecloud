@@ -53,6 +53,11 @@ providers:
     # If your plan & apply makes more than batch_size changes they will be
     # broken up into smaller sets of at most that size.
     # batch_size: 1000
+    #
+    # Optionally restrict hosted zone lookup to only private or public zones.
+    # Set to true to only use private zones, false for public zones, or omit for no restriction.
+    # If set to true, zone creation is disabled, cause gcp python dns api doesn't allow to create private zone
+    #private: False
 ```
 
 ### Support Information

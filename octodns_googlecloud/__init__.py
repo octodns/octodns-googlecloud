@@ -9,6 +9,7 @@ from logging import getLogger
 from uuid import uuid4
 
 from google.cloud import dns
+from google.cloud.dns import ManagedZone
 
 from octodns.provider.base import BaseProvider
 from octodns.record import Record
@@ -68,6 +69,7 @@ class GoogleCloudProvider(BaseProvider):
         project=None,
         credentials_file=None,
         batch_size=1000,
+        private=None,
         *args,
         **kwargs,
     ):
@@ -79,6 +81,8 @@ class GoogleCloudProvider(BaseProvider):
             self.gcloud_client = dns.Client(project=project)
 
         self.batch_size = batch_size
+
+        self.private = private
 
         # Logger
         self.log = getLogger(f'GoogleCloudProvider[{id}]')
@@ -203,6 +207,29 @@ class GoogleCloudProvider(BaseProvider):
                 # yield from is in python 3 only.
                 yield gcloud_record
 
+    def _is_zone_private(self, zone: ManagedZone) -> bool:
+        """Determine if a ManagedZone is private.
+        :param zone: zone to check
+        :type zone: google.cloud.dns.ManagedZone
+
+        :return: True if the zone is private, False otherwise
+        """
+        return zone._properties.get('visibility', '') == 'private'
+
+    def _filter_zone(self, zone: ManagedZone) -> bool:
+        """Determine if the zone matches filtering criteria.
+
+        :param zone: zone to check
+        :type zone: google.cloud.dns.ManagedZone
+
+        :return: True if the zone should be included, False otherwise
+        """
+        if self.private is None:
+            return True
+        return self.private is None or self.private == self._is_zone_private(
+            zone
+        )
+
     def _get_cloud_zones(self, page_token=None):
         """Load all ManagedZones into the self._gcloud_zones dict which is
         mapped with the dns_name as key.
@@ -212,7 +239,8 @@ class GoogleCloudProvider(BaseProvider):
 
         gcloud_zones = self.gcloud_client.list_zones(page_token=page_token)
         for gcloud_zone in gcloud_zones:
-            self._gcloud_zones[gcloud_zone.dns_name] = gcloud_zone
+            if self._filter_zone(gcloud_zone):
+                self._gcloud_zones[gcloud_zone.dns_name] = gcloud_zone
 
         if gcloud_zones.next_page_token:
             self._get_cloud_zones(gcloud_zones.next_page_token)
