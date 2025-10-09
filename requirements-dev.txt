@@ -5,8 +5,7 @@ black==24.10.0
 build==1.3.0
 cffi==2.0.0
 changelet==0.3.0
-click==8.1.8; python_version<'3.10'
-click==8.3.0; python_version>='3.10'
+click==8.3.0
 cmarkgfm==2024.11.20
 coverage==7.10.7
 cryptography==46.0.2
