@@ -89,6 +89,7 @@ class GoogleCloudProvider(BaseProvider):
         self.id = id
 
         self._gcloud_zones = {}
+        self._gcloud_zones_records = {}
 
         super().__init__(id, *args, **kwargs)
 
@@ -124,17 +125,32 @@ class GoogleCloudProvider(BaseProvider):
                     gcloud_changes.add_record_set(
                         _rrset_func(gcloud_zone, change.record)
                     )
+
                 elif class_name == 'Delete':
                     gcloud_changes.delete_record_set(
-                        _rrset_func(gcloud_zone, change.record)
+                        _rrset_func(
+                            gcloud_zone,
+                            change.existing,
+                            raw_value=self._get_record_raw_value(
+                                gcloud_zone, change.existing
+                            ),
+                        )
                     )
+
                 elif class_name == 'Update':
                     gcloud_changes.delete_record_set(
-                        _rrset_func(gcloud_zone, change.existing)
+                        _rrset_func(
+                            gcloud_zone,
+                            change.existing,
+                            raw_value=self._get_record_raw_value(
+                                gcloud_zone, change.existing
+                            ),
+                        )
                     )
                     gcloud_changes.add_record_set(
                         _rrset_func(gcloud_zone, change.new)
                     )
+
                 else:
                     msg = (
                         f'Change type "{class_name}" for change '
@@ -182,31 +198,6 @@ class GoogleCloudProvider(BaseProvider):
 
         return gcloud_zone
 
-    def _get_gcloud_records(self, gcloud_zone, page_token=None):
-        """Generator function which yields ResourceRecordSet for the managed
-        gcloud zone, until there are no more records to pull.
-
-        :param gcloud_zone: zone to pull records from
-        :type gcloud_zone: google.cloud.dns.ManagedZone
-        :param page_token: page token for the page to get
-
-        :return: a resource record set
-        :type return: google.cloud.dns.ResourceRecordSet
-        """
-        gcloud_iterator = gcloud_zone.list_resource_record_sets(
-            page_token=page_token
-        )
-        for gcloud_record in gcloud_iterator:
-            yield gcloud_record
-        # This is to get results which may be on a "paged" page.
-        # (if more than max_results) entries.
-        if gcloud_iterator.next_page_token:
-            for gcloud_record in self._get_gcloud_records(
-                gcloud_zone, gcloud_iterator.next_page_token
-            ):
-                # yield from is in python 3 only.
-                yield gcloud_record
-
     def _is_zone_private(self, zone: ManagedZone) -> bool:
         """Determine if a ManagedZone is private.
         :param zone: zone to check
@@ -230,7 +221,7 @@ class GoogleCloudProvider(BaseProvider):
             zone
         )
 
-    def _get_cloud_zones(self, page_token=None):
+    def _get_gcloud_zones(self, page_token=None):
         """Load all ManagedZones into the self._gcloud_zones dict which is
         mapped with the dns_name as key.
 
@@ -243,13 +234,58 @@ class GoogleCloudProvider(BaseProvider):
                 self._gcloud_zones[gcloud_zone.dns_name] = gcloud_zone
 
         if gcloud_zones.next_page_token:
-            self._get_cloud_zones(gcloud_zones.next_page_token)
+            self._get_gcloud_zones(gcloud_zones.next_page_token)
+
+    def _get_gcloud_zone_records(self, gcloud_zone, page_token=None):
+        """
+        Generator function which yields ResourceRecordSet for the managed
+        gcloud zone, until there are no more records to pull.
+
+        :param gcloud_zone: zone to pull records from
+        :type gcloud_zone: google.cloud.dns.ManagedZone
+        :param page_token: page token for the page to get
+
+        :return: a resource record set
+        :type return: google.cloud.dns.ResourceRecordSet
+        """
+
+        if not self._gcloud_zones_records.get(gcloud_zone.dns_name):
+            self._gcloud_zones_records[gcloud_zone.dns_name] = []
+
+        iterator = gcloud_zone.list_resource_record_sets(page_token=page_token)
+        for record in iterator:
+            self._gcloud_zones_records[gcloud_zone.dns_name].append(record)
+
+        # There's more results.
+        if iterator.next_page_token:
+            self._get_gcloud_zone_records(
+                gcloud_zone, page_token=iterator.next_page_token
+            )
+
+        return self._gcloud_zones_records[gcloud_zone.dns_name]
+
+    def _get_record_raw_value(self, gcloud_zone, existing_record):
+        for gcloud_record in self.gcloud_zone_records(gcloud_zone):
+            if not gcloud_record.name == existing_record.fqdn:
+                continue
+
+            if not gcloud_record.record_type.upper() == existing_record._type:
+                continue
+
+            return gcloud_record.rrdatas
 
     @property
     def gcloud_zones(self):
         if not self._gcloud_zones:
-            self._get_cloud_zones()
+            self._get_gcloud_zones()
+
         return self._gcloud_zones
+
+    def gcloud_zone_records(self, gcloud_zone):
+        if not self._gcloud_zones_records.get(gcloud_zone.dns_name):
+            self._get_gcloud_zone_records(gcloud_zone)
+
+        return self._gcloud_zones_records[gcloud_zone.dns_name]
 
     def populate(self, zone, target=False, lenient=False):
         """Required function of manager.py to collect records from zone.
@@ -278,7 +314,7 @@ class GoogleCloudProvider(BaseProvider):
 
         if gcloud_zone:
             exists = True
-            for gcloud_record in self._get_gcloud_records(gcloud_zone):
+            for gcloud_record in self.gcloud_zone_records(gcloud_zone):
                 if gcloud_record.record_type.upper() not in self.SUPPORTS:
                     continue
 
@@ -388,55 +424,59 @@ class GoogleCloudProvider(BaseProvider):
 
     _data_for_TXT = _data_for_SPF
 
-    def _rrset_for_A(self, gcloud_zone, record):
+    def _rrset_for_A(self, gcloud_zone, record, raw_value=None):
         return gcloud_zone.resource_record_set(
-            record.fqdn, record._type, record.ttl, record.values
+            record.fqdn, record._type, record.ttl, raw_value or record.values
         )
 
     _rrset_for_AAAA = _rrset_for_A
 
-    def _rrset_for_CAA(self, gcloud_zone, record):
+    def _rrset_for_CAA(self, gcloud_zone, record, raw_value=None):
         return gcloud_zone.resource_record_set(
             record.fqdn,
             record._type,
             record.ttl,
-            [f'{v.flags} {v.tag} {v.value}' for v in record.values],
+            raw_value
+            or [f'{v.flags} {v.tag} {v.value}' for v in record.values],
         )
 
-    def _rrset_for_CNAME(self, gcloud_zone, record):
+    def _rrset_for_CNAME(self, gcloud_zone, record, raw_value=None):
         value = add_trailing_dot(record.value)
         return gcloud_zone.resource_record_set(
             record.fqdn, record._type, record.ttl, [value]
         )
 
-    def _rrset_for_DS(self, gcloud_zone, record):
+    def _rrset_for_DS(self, gcloud_zone, record, raw_value=None):
         return gcloud_zone.resource_record_set(
             record.fqdn,
             record._type,
             record.ttl,
-            [
+            raw_value
+            or [
                 f'{v.key_tag} {v.algorithm} {v.digest_type} {v.digest}'
                 for v in record.values
             ],
         )
 
-    def _rrset_for_MX(self, gcloud_zone, record):
+    def _rrset_for_MX(self, gcloud_zone, record, raw_value=None):
         return gcloud_zone.resource_record_set(
             record.fqdn,
             record._type,
             record.ttl,
-            [
+            raw_value
+            or [
                 f'{v.preference} {add_trailing_dot(v.exchange)}'
                 for v in record.values
             ],
         )
 
-    def _rrset_for_NAPTR(self, gcloud_zone, record):
+    def _rrset_for_NAPTR(self, gcloud_zone, record, raw_value=None):
         return gcloud_zone.resource_record_set(
             record.fqdn,
             record._type,
             record.ttl,
-            [
+            raw_value
+            or [
                 f'{v.order} {v.preference} "{v.flags}" "{v.service}" '
                 f'"{v.regexp}" {v.replacement}'
                 for v in record.values
@@ -449,17 +489,21 @@ class GoogleCloudProvider(BaseProvider):
 
     _rrset_for_PTR = _rrset_for_CNAME
 
-    def _rrset_for_SPF(self, gcloud_zone, record):
-        return gcloud_zone.resource_record_set(
-            record.fqdn, record._type, record.ttl, record.chunked_values
-        )
-
-    def _rrset_for_SRV(self, gcloud_zone, record):
+    def _rrset_for_SPF(self, gcloud_zone, record, raw_value=None):
         return gcloud_zone.resource_record_set(
             record.fqdn,
             record._type,
             record.ttl,
-            [
+            raw_value or record.chunked_values,
+        )
+
+    def _rrset_for_SRV(self, gcloud_zone, record, raw_value=None):
+        return gcloud_zone.resource_record_set(
+            record.fqdn,
+            record._type,
+            record.ttl,
+            raw_value
+            or [
                 f'{v.priority} {v.weight} {v.port} {v.target}'
                 for v in record.values
             ],
