@@ -222,8 +222,14 @@ class GoogleCloudProvider(BaseProvider):
         )
 
     def _get_gcloud_zones(self, page_token=None):
-        """Load all ManagedZones into the self._gcloud_zones dict which is
-        mapped with the dns_name as key.
+        """
+        Recursively fetches zones from Google Cloud DNS API and put the
+        returned `ManagedZone` objects in cache.
+
+        This function should not be called directly, please use
+        `GoogleCloudProvider.gcloud_zones()` instead.
+
+        :param page_token: Page token to get results from
 
         :return: void
         """
@@ -238,15 +244,18 @@ class GoogleCloudProvider(BaseProvider):
 
     def _get_gcloud_zone_records(self, gcloud_zone, page_token=None):
         """
-        Generator function which yields ResourceRecordSet for the managed
-        gcloud zone, until there are no more records to pull.
+        Recursively fetches zone records from Google Cloud DNS API and put the
+        returned `ResourceRecordSet` objects in cache.
 
-        :param gcloud_zone: zone to pull records from
+        This function should not be called directly, please use
+        `GoogleCloudProvider.gcloud_zone_records()` instead.
+
+        :param gcloud_zone: Zone to get records from
         :type gcloud_zone: google.cloud.dns.ManagedZone
-        :param page_token: page token for the page to get
+        :param page_token: Page token to get results from
 
-        :return: a resource record set
-        :type return: google.cloud.dns.ResourceRecordSet
+        :return: A resource record set
+        :type return: list of google.cloud.dns.ResourceRecordSet
         """
 
         if not self._gcloud_zones_records.get(gcloud_zone.dns_name):
@@ -276,12 +285,31 @@ class GoogleCloudProvider(BaseProvider):
 
     @property
     def gcloud_zones(self):
+        """
+        Returns Google Cloud DNS zones list from cache or build zones cache
+        if missing.
+
+        :return: A dict of zones names as key and corresponding object as value
+        :type return: dict of str: google.cloud.dns.ManagedZone
+        """
+
         if not self._gcloud_zones:
             self._get_gcloud_zones()
 
         return self._gcloud_zones
 
     def gcloud_zone_records(self, gcloud_zone):
+        """
+        Returns a Google Cloud DNS zone records list from cache or build records
+        cache if missing.
+
+        :param gcloud_zone: Zone to get records from
+        :type gcloud_zone: google.cloud.dns.ManagedZone
+
+        :return: A resource record set
+        :type return: list of google.cloud.dns.ResourceRecordSet
+        """
+
         if not self._gcloud_zones_records.get(gcloud_zone.dns_name):
             self._get_gcloud_zone_records(gcloud_zone)
 
