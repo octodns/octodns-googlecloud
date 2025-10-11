@@ -262,8 +262,7 @@ class GoogleCloudProvider(BaseProvider):
             self._gcloud_zones_records[gcloud_zone.dns_name] = []
 
         iterator = gcloud_zone.list_resource_record_sets(page_token=page_token)
-        for record in iterator:
-            self._gcloud_zones_records[gcloud_zone.dns_name].append(record)
+        self._gcloud_zones_records[gcloud_zone.dns_name].extend(iterator)
 
         # There's more results.
         if iterator.next_page_token:
