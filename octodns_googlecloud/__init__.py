@@ -273,14 +273,17 @@ class GoogleCloudProvider(BaseProvider):
         return self._gcloud_zones_records[gcloud_zone.dns_name]
 
     def _get_record_raw_value(self, gcloud_zone, existing_record):
-        for gcloud_record in self.gcloud_zone_records(gcloud_zone):
-            if not gcloud_record.name == existing_record.fqdn:
-                continue
+        fqdn = existing_record.fqdn
+        _type = existing_record._type
 
-            if not gcloud_record.record_type == existing_record._type:
-                continue
-
-            return gcloud_record.rrdatas
+        try:
+            return next(
+                r.rrdatas
+                for r in self.gcloud_zone_records(gcloud_zone)
+                if r.name == fqdn and r.record_type == _type
+            )
+        except StopIteration:
+            pass
 
     @property
     def gcloud_zones(self):
