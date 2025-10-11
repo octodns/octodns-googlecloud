@@ -131,7 +131,7 @@ class GoogleCloudProvider(BaseProvider):
                         _rrset_func(
                             gcloud_zone,
                             change.existing,
-                            raw_value=self._get_record_raw_value(
+                            gcloud_value=self._get_record_gcloud_value(
                                 gcloud_zone, change.existing
                             ),
                         )
@@ -142,7 +142,7 @@ class GoogleCloudProvider(BaseProvider):
                         _rrset_func(
                             gcloud_zone,
                             change.existing,
-                            raw_value=self._get_record_raw_value(
+                            gcloud_value=self._get_record_gcloud_value(
                                 gcloud_zone, change.existing
                             ),
                         )
@@ -272,7 +272,7 @@ class GoogleCloudProvider(BaseProvider):
 
         return self._gcloud_zones_records[gcloud_zone.dns_name]
 
-    def _get_record_raw_value(self, gcloud_zone, existing_record):
+    def _get_record_gcloud_value(self, gcloud_zone, existing_record):
         fqdn = existing_record.fqdn
         _type = existing_record._type
 
@@ -454,58 +454,58 @@ class GoogleCloudProvider(BaseProvider):
 
     _data_for_TXT = _data_for_SPF
 
-    def _rrset_for_A(self, gcloud_zone, record, raw_value=None):
+    def _rrset_for_A(self, gcloud_zone, record, gcloud_value=None):
         return gcloud_zone.resource_record_set(
-            record.fqdn, record._type, record.ttl, raw_value or record.values
+            record.fqdn, record._type, record.ttl, gcloud_value or record.values
         )
 
     _rrset_for_AAAA = _rrset_for_A
 
-    def _rrset_for_CAA(self, gcloud_zone, record, raw_value=None):
+    def _rrset_for_CAA(self, gcloud_zone, record, gcloud_value=None):
         return gcloud_zone.resource_record_set(
             record.fqdn,
             record._type,
             record.ttl,
-            raw_value
+            gcloud_value
             or [f'{v.flags} {v.tag} {v.value}' for v in record.values],
         )
 
-    def _rrset_for_CNAME(self, gcloud_zone, record, raw_value=None):
+    def _rrset_for_CNAME(self, gcloud_zone, record, gcloud_value=None):
         value = add_trailing_dot(record.value)
         return gcloud_zone.resource_record_set(
             record.fqdn, record._type, record.ttl, [value]
         )
 
-    def _rrset_for_DS(self, gcloud_zone, record, raw_value=None):
+    def _rrset_for_DS(self, gcloud_zone, record, gcloud_value=None):
         return gcloud_zone.resource_record_set(
             record.fqdn,
             record._type,
             record.ttl,
-            raw_value
+            gcloud_value
             or [
                 f'{v.key_tag} {v.algorithm} {v.digest_type} {v.digest}'
                 for v in record.values
             ],
         )
 
-    def _rrset_for_MX(self, gcloud_zone, record, raw_value=None):
+    def _rrset_for_MX(self, gcloud_zone, record, gcloud_value=None):
         return gcloud_zone.resource_record_set(
             record.fqdn,
             record._type,
             record.ttl,
-            raw_value
+            gcloud_value
             or [
                 f'{v.preference} {add_trailing_dot(v.exchange)}'
                 for v in record.values
             ],
         )
 
-    def _rrset_for_NAPTR(self, gcloud_zone, record, raw_value=None):
+    def _rrset_for_NAPTR(self, gcloud_zone, record, gcloud_value=None):
         return gcloud_zone.resource_record_set(
             record.fqdn,
             record._type,
             record.ttl,
-            raw_value
+            gcloud_value
             or [
                 f'{v.order} {v.preference} "{v.flags}" "{v.service}" '
                 f'"{v.regexp}" {v.replacement}'
@@ -519,20 +519,20 @@ class GoogleCloudProvider(BaseProvider):
 
     _rrset_for_PTR = _rrset_for_CNAME
 
-    def _rrset_for_SPF(self, gcloud_zone, record, raw_value=None):
+    def _rrset_for_SPF(self, gcloud_zone, record, gcloud_value=None):
         return gcloud_zone.resource_record_set(
             record.fqdn,
             record._type,
             record.ttl,
-            raw_value or record.chunked_values,
+            gcloud_value or record.chunked_values,
         )
 
-    def _rrset_for_SRV(self, gcloud_zone, record, raw_value=None):
+    def _rrset_for_SRV(self, gcloud_zone, record, gcloud_value=None):
         return gcloud_zone.resource_record_set(
             record.fqdn,
             record._type,
             record.ttl,
-            raw_value
+            gcloud_value
             or [
                 f'{v.priority} {v.weight} {v.port} {v.target}'
                 for v in record.values
