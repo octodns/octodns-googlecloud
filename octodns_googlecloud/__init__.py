@@ -277,7 +277,7 @@ class GoogleCloudProvider(BaseProvider):
             if not gcloud_record.name == existing_record.fqdn:
                 continue
 
-            if not gcloud_record.record_type.upper() == existing_record._type:
+            if not gcloud_record.record_type == existing_record._type:
                 continue
 
             return gcloud_record.rrdatas
@@ -342,7 +342,7 @@ class GoogleCloudProvider(BaseProvider):
         if gcloud_zone:
             exists = True
             for gcloud_record in self.gcloud_zone_records(gcloud_zone):
-                if gcloud_record.record_type.upper() not in self.SUPPORTS:
+                if gcloud_record.record_type not in self.SUPPORTS:
                     continue
 
                 record_name = gcloud_record.name
@@ -351,7 +351,7 @@ class GoogleCloudProvider(BaseProvider):
                     # here. "root" records will then get the '' record_name,
                     # which is also the way octodns likes it.
                     record_name = record_name[: -(len(zone.name) + 1)]
-                typ = gcloud_record.record_type.upper()
+                typ = gcloud_record.record_type
                 data = getattr(self, f'_data_for_{typ}')
                 data = data(gcloud_record)
                 data['type'] = typ
