@@ -1,13 +1,13 @@
 ## 1.1.0 - 2025-10-11
 
 Minor:
-* Add `private` param to allow filtering public/private zones - [#66](https://github.com/None/pull/66)
+* Add `private` param to allow filtering public/private zones - [#66](https://github.com/octodns/octodns-googlecloud/pull/66)
 * Remove protobuf version pinning as google-cloud libs are broken with it
 
 Patch:
-* Fix multiple values records updates and deletions when their values aren't sorted on Google Cloud DNS side - [#70](https://github.com/None/pull/70)
-* Fixing issue PtrRecord has no setter for property value - [#65](https://github.com/None/pull/65)
-* Use new [changelet](https://github.com/octodns/changelet) tooling - [#62](https://github.com/None/pull/62)
+* Fix multiple values records updates and deletions when their values aren't sorted on Google Cloud DNS side - [#70](https://github.com/octodns/octodns-googlecloud/pull/70)
+* Fixing issue PtrRecord has no setter for property value - [#65](https://github.com/octodns/octodns-googlecloud/pull/65)
+* Use new [changelet](https://github.com/octodns/changelet) tooling - [#62](https://github.com/octodns/octodns-googlecloud/pull/62)
 
 ## v1.0.0 - 2025-05-04 - Long overdue 1.0
 
