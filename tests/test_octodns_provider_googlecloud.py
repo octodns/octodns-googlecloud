@@ -399,7 +399,7 @@ class TestGoogleCloudProvider(TestCase):
             "unit.tests.": [
                 DummyResourceRecordSet('unit.tests.', 'A', 0, ['1.2.3.4']),
                 # Two records with the same name but different types to test
-                # GoogleCloudProvider._get_gcloud_zone_records()
+                # GoogleCloudProvider._get_record_gcloud_value()
                 DummyResourceRecordSet(
                     'aa.unit.tests.', 'TXT', 60, ['octodns=xxxx']
                 ),
