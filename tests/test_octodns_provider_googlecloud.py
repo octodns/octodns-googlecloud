@@ -279,13 +279,15 @@ class DummyGoogleCloudZone:
         self.name = name
         self._properties = properties
 
-    def resource_record_set(self, *args):
-        return DummyResourceRecordSet(*args)
+    def resource_record_set(self, name, record_type, ttl, rrdatas):
+        return DummyResourceRecordSet(name, record_type, ttl, rrdatas)
 
-    def list_resource_record_sets(self, *args):
+    def list_resource_record_sets(
+        self, max_results=None, page_token=None, client=None
+    ):
         pass
 
-    def create(self, *args, **kwargs):
+    def create(self, client=None):
         pass
 
 
@@ -393,6 +395,17 @@ class TestGoogleCloudProvider(TestCase):
         provider = self._get_provider()
         provider.gcloud_client = Mock()
         provider._gcloud_zones = {"unit.tests.": gcloud_zone_mock}
+        provider._gcloud_zones_records = {
+            "unit.tests.": [
+                DummyResourceRecordSet('unit.tests.', 'A', 0, ['1.2.3.4']),
+                # Two records with the same name but different types to test
+                # GoogleCloudProvider._get_gcloud_zone_records()
+                DummyResourceRecordSet(
+                    'aa.unit.tests.', 'TXT', 60, ['octodns=xxxx']
+                ),
+                DummyResourceRecordSet('aa.unit.tests.', 'A', 60, ['1.2.4.3']),
+            ]
+        }
         desired = Mock()
         desired.name = "unit.tests."
         changes = []
@@ -552,13 +565,13 @@ class TestGoogleCloudProvider(TestCase):
     def test_populate_corner_cases(self, _):
         provider = self._get_provider()
         test_zone = Zone('unit.tests.', [])
-        not_same_fqdn = (
-            DummyResourceRecordSet('unit.tests.gr', u'A', 0, [u'1.2.3.4']),
-        )
-
-        provider._get_gcloud_records = Mock(side_effect=[not_same_fqdn])
         provider._gcloud_zones = {
             "unit.tests.": DummyGoogleCloudZone("unit.tests.", "unit-tests")
+        }
+        provider._gcloud_zones_records = {
+            "unit.tests.": DummyIterator(
+                [DummyResourceRecordSet('unit.tests.gr', u'A', 0, [u'1.2.3.4'])]
+            )
         }
 
         provider.populate(test_zone)
